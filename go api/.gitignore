@@ -1,0 +1,25 @@
+# Go binaries
+*.exe
+main
+
+# Go modules
+go.work
+
+# Configs & secrets
+.env
+local.yaml
+config.yaml
+config.json
+
+# Logs & DB
+*.log
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
