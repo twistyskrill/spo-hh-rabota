@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Edit, Briefcase, Plus, Calendar, Clock, ArrowRight } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Edit, Briefcase, Plus, Calendar, Clock, ArrowRight, Trash2 } from 'lucide-react';
 import { CreateAnnouncementModal } from './CreateAnnouncementModal';
 import { Announcement } from '../data';
 
@@ -40,10 +40,10 @@ export function UserProfilePage({ onBack, onEditProfile, announcements, onAddAnn
           id: ad.id,
           title: ad.title,
           category: ad.category_name || ad.category?.name || 'Без категории',
-          status: statusMap[ad.status] || ad.status || 'На модерации',
+          status: ad.executor_name ? 'В работе' : (statusMap[ad.status] || ad.status || 'На модерации'),
           date: ad.created_at ? new Date(ad.created_at).toLocaleDateString() : '',
           budget: `${ad.price} руб.`,
-          handyman: ad.user_name || ad.user?.name || null,
+          handyman: ad.executor_name || ad.user_name || ad.user?.name || null,
           location: ad.location,
           description: '',
         }));
@@ -68,6 +68,18 @@ export function UserProfilePage({ onBack, onEditProfile, announcements, onAddAnn
     onAddAnnouncement(newAnnouncement);
     setMyAnnouncements(prev => [newAnnouncement, ...prev]);
     setIsModalOpen(false);
+  };
+
+  const handleDeleteAnnouncement = async (id: number) => {
+    if (!window.confirm("Вы уверены, что хотите удалить это объявление?")) return;
+    try {
+      const { api } = await import('../api');
+      await api.deleteAd(id);
+      setMyAnnouncements(prev => prev.filter(a => a.id !== id));
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка при удалении объявления");
+    }
   };
 
   return (
@@ -203,14 +215,26 @@ export function UserProfilePage({ onBack, onEditProfile, announcements, onAddAnn
                               {announcement.category}
                             </span>
                           </div>
-                          <div className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${
-                            announcement.status === 'Открыто' ? 'bg-green-100 text-green-700'
-                            : announcement.status === 'На модерации' ? 'bg-yellow-100 text-yellow-700'
-                            : announcement.status === 'Отклонено' ? 'bg-red-100 text-red-700'
-                            : announcement.status === 'В работе' ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {announcement.status}
+                          <div className="flex items-center gap-3">
+                            <div className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+                              announcement.status === 'Открыто' ? 'bg-green-100 text-green-700'
+                              : announcement.status === 'На модерации' ? 'bg-yellow-100 text-yellow-700'
+                              : announcement.status === 'Отклонено' ? 'bg-red-100 text-red-700'
+                              : announcement.status === 'В работе' ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {announcement.status}
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteAnnouncement(announcement.id);
+                              }}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                              title="Удалить объявление"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
 

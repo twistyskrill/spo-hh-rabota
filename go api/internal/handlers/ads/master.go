@@ -77,6 +77,12 @@ func createResponse(db *gorm.DB, logger *slog.Logger, w http.ResponseWriter, r *
 		return
 	}
 
+	// Проверяем, что у объявления еще нет исполнителя
+	if ad.ExecutorID != nil {
+		http.Error(w, `{"error": "ad already has an executor"}`, http.StatusConflict)
+		return
+	}
+
 	// Убираем жесткую привязку категории объявления к категориям мастера
 	// чтобы мастера могли откликаться на любые объявления
 	/*
@@ -108,6 +114,12 @@ func createResponse(db *gorm.DB, logger *slog.Logger, w http.ResponseWriter, r *
 		logger.Error("failed to create response", "error", err)
 		http.Error(w, `{"error": "failed to create response"}`, http.StatusInternalServerError)
 		return
+	}
+
+	// Назначаем исполнителя на объявление и меняем статус
+	if err := db.Model(&ad).Updates(map[string]interface{}{"executor_id": userID, "status": "in_progress"}).Error; err != nil {
+		logger.Error("failed to update ad executor", "error", err)
+		// Не прерываем, отклик уже создан
 	}
 
 	// Загружаем связанные данные для ответа

@@ -81,12 +81,14 @@ type Ad struct {
 	Location    string    `gorm:"size:255" json:"location"` // локация объявления
 	Schedule    string    `gorm:"size:255" json:"schedule"` // когда актуально объявление
 	CreatedAt   time.Time `gorm:"not null;index" json:"created_at"`
-	Status      string    `gorm:"size:20;not null;default:'pending';index" json:"status"` // pending, approved, rejected
+	Status      string    `gorm:"size:20;not null;default:'pending';index" json:"status"` // pending, approved, rejected, in_progress, completed
+	ExecutorID  *uint     `gorm:"index" json:"executor_id,omitempty"` // ID мастера, который взял в работу
 
 	// Связи
 	Category  Category  `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	PriceUnit PriceUnit `gorm:"foreignKey:PriceUnitID" json:"price_unit,omitempty"`
 	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Executor  *User     `gorm:"foreignKey:ExecutorID" json:"executor,omitempty"`
 }
 
 // ======================================================================
