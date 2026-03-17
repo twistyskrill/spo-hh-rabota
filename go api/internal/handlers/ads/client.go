@@ -148,7 +148,7 @@ func getAdsList(db *gorm.DB, logger *slog.Logger, w http.ResponseWriter, r *http
 		Joins("JOIN categories c ON a.category_id = c.id").
 		Joins("JOIN price_units pu ON a.price_unit_id = pu.id").
 		Joins("JOIN users u ON a.user_id = u.id").
-		Where("a.status = ? AND a.executor_id IS NULL", "approved").
+		Where("a.status = ? AND a.executor_id IS NULL AND a.deleted_at IS NULL", "approved").
 		Order("a.created_at DESC").
 		Limit(limit).
 		Offset(offset)
@@ -212,7 +212,7 @@ func getMyAdsList(db *gorm.DB, logger *slog.Logger, w http.ResponseWriter, userI
 		Joins("JOIN categories c ON a.category_id = c.id").
 		Joins("JOIN price_units pu ON a.price_unit_id = pu.id").
 		Joins("LEFT JOIN users u ON a.executor_id = u.id").
-		Where("a.user_id = ?", userID).
+		Where("a.user_id = ? AND a.deleted_at IS NULL", userID).
 		Order("a.created_at DESC").
 		Limit(limit).
 		Offset(offset)

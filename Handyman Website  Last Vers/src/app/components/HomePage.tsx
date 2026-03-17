@@ -45,6 +45,7 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
 
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [respondedIds, setRespondedIds] = useState<Set<number>>(new Set());
+  const [takenJobIds, setTakenJobIds] = useState<Set<number>>(new Set());
 
   const handleRespond = async (jobId: number) => {
     setRespondingId(jobId);
@@ -58,6 +59,8 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
           alert('Вы не можете откликнуться на свое объявление');
         } else if (msg.includes('response already exists')) {
           alert('Вы уже откликнулись на это объявление');
+        } else if (msg.includes('ad already has an executor')) {
+          setTakenJobIds(prev => new Set(prev).add(jobId));
         } else {
           alert(msg || 'Ошибка при отклике');
         }
@@ -209,7 +212,11 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
                    </span>
                 </div>
                 
-                {respondedIds.has(Number(job.id)) ? (
+                {takenJobIds.has(Number(job.id)) ? (
+                  <span className="text-sm font-bold text-red-600 flex items-center">
+                    Уже кто-то откликнулся
+                  </span>
+                ) : respondedIds.has(Number(job.id)) ? (
                   <span className="text-sm font-bold text-green-600 flex items-center">
                     Вы откликнулись ✓
                   </span>
