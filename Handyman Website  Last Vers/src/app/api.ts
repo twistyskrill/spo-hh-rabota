@@ -6,6 +6,7 @@ const getErrorMessage = async (res: Response, fallback: string): Promise<string>
 
   try {
     const parsed = JSON.parse(text);
+    if (parsed?.error && typeof parsed.error === 'string') return parsed.error;
     if (parsed?.message && typeof parsed.message === 'string') return parsed.message;
   } catch {
     // Ignore JSON parse errors and return raw text below.
@@ -192,7 +193,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to create response');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to create response'));
     return res.json();
   },
   deleteResponse: async (id: number) => {

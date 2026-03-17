@@ -77,12 +77,15 @@ func createResponse(db *gorm.DB, logger *slog.Logger, w http.ResponseWriter, r *
 		return
 	}
 
-	// Проверяем, что категория объявления входит в категории мастера
-	var workerCategory models.WorkerCategory
-	if err := db.Where("worker_id = ? AND category_id = ?", userID, ad.CategoryID).First(&workerCategory).Error; err != nil {
-		http.Error(w, `{"error": "ad category does not match worker categories"}`, http.StatusForbidden)
-		return
-	}
+	// Убираем жесткую привязку категории объявления к категориям мастера
+	// чтобы мастера могли откликаться на любые объявления
+	/*
+		var workerCategory models.WorkerCategory
+		if err := db.Where("worker_id = ? AND category_id = ?", userID, ad.CategoryID).First(&workerCategory).Error; err != nil {
+			http.Error(w, `{"error": "ad category does not match worker categories"}`, http.StatusForbidden)
+			return
+		}
+	*/
 
 	// Проверяем, что мастер еще не откликнулся на это объявление
 	var existingResponse models.Response

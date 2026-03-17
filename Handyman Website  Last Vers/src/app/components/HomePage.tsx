@@ -32,7 +32,16 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
         setCategories(data);
       }
     }).catch(console.error);
-  }, []);
+    
+    if (userRole === 'handyman') {
+      api.getResponses().then((data) => {
+        if (data && Array.isArray(data.responses)) {
+          const ids = data.responses.map((r: any) => r.ad_id);
+          setRespondedIds(new Set(ids));
+        }
+      }).catch(console.error);
+    }
+  }, [userRole]);
 
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [respondedIds, setRespondedIds] = useState<Set<number>>(new Set());
@@ -44,7 +53,14 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
       setRespondedIds(prev => new Set(prev).add(jobId));
     } catch (e) {
       console.error('Failed to respond to ad', e);
-      alert('Ошибка при отклике');
+        const msg = e instanceof Error ? e.message : '';
+        if (msg.includes('cannot respond to own ad')) {
+          alert('Вы не можете откликнуться на свое объявление');
+        } else if (msg.includes('response already exists')) {
+          alert('Вы уже откликнулись на это объявление');
+        } else {
+          alert(msg || 'Ошибка при отклике');
+        }
     } finally {
       setRespondingId(null);
     }
