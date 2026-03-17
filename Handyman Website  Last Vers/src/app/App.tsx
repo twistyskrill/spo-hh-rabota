@@ -147,7 +147,7 @@ export default function App() {
           name: w.name,
           skill: (w.categories && w.categories[0]?.name) || 'Мастер',
           rating: 0,
-          hourlyRate: 0,
+          hourlyRate: w.hourly_rate || 0,
           description: w.description || '',
           reviews: [],
           email: w.email,
@@ -223,7 +223,7 @@ export default function App() {
           name: data.name || 'Мастер',
           skill: data.categories?.[0]?.name || 'Специалист',
           rating: 0,
-          hourlyRate: 0,
+          hourlyRate: data.hourly_rate || 0,
           description: data.description || '',
           reviews: [],
           email: data.email || ''
@@ -276,7 +276,7 @@ export default function App() {
         name: currentUserProfile.name,
         skill: (currentUserProfile as any).worker?.specialization?.[0]?.name || 'Мастер',
         rating: 0,
-        hourlyRate: 0,
+        hourlyRate: (currentUserProfile as any).worker?.hourly_rate || 0,
         description: (currentUserProfile as any).worker?.description || '',
         reviews: [],
         email: currentUserProfile.email,
@@ -485,8 +485,8 @@ export default function App() {
                 try {
                   await api.updateProfile({
                     description: updatedHandyman.description,
+                    hourly_rate: updatedHandyman.hourlyRate,
                     category_names: [updatedHandyman.skill],
-                    // add other fields if api supports
                   });
                   // re-fetch to make sure state is consistent
                   const p = await api.getProfile();

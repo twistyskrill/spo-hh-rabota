@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Handyman } from '../data';
+import { api } from '../api';
 
 interface HandymanProfileEditorProps {
   handyman: Handyman;
@@ -9,9 +10,24 @@ interface HandymanProfileEditorProps {
 
 export function HandymanProfileEditor({ handyman, onSave, onBack }: HandymanProfileEditorProps) {
   const [name, setName] = useState(handyman.name);
-  const [skill, setSkill] = useState(handyman.skill || 'Сантехника');
+  const [skill, setSkill] = useState(handyman.skill || '');
   const [hourlyRate, setHourlyRate] = useState(handyman.hourlyRate);
   const [description, setDescription] = useState(handyman.description);
+
+  // Categories from DB
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    api.getCategories().then((data) => {
+      if (Array.isArray(data)) {
+        setCategories(data);
+        // If current skill is empty or not in the list, set to first available
+        if (data.length > 0 && !skill) {
+          setSkill(data[0].name);
+        }
+      }
+    }).catch(console.error);
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,11 +49,13 @@ export function HandymanProfileEditor({ handyman, onSave, onBack }: HandymanProf
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Специализация</label>
             <select value={skill} onChange={e => setSkill(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none">
-              <option>Сантехника</option>
-              <option>Электрика</option>
-              <option>Столярные работы</option>
-              <option>Малярные работы</option>
-              <option>Уборка</option>
+              {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                ))
+              ) : (
+                <option disabled>Загрузка...</option>
+              )}
             </select>
           </div>
           <div>

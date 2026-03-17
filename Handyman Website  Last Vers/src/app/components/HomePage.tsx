@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Star, ArrowRight, Briefcase, MapPin, Calendar, DollarSign, User } from 'lucide-react';
+import { Star, ArrowRight, Briefcase, MapPin, Calendar, DollarSign, User, Search } from 'lucide-react';
 import { Handyman, Announcement } from '../data';
+import { api } from '../api';
 
 interface HomePageProps {
   handymen: Handyman[];
@@ -12,6 +13,9 @@ interface HomePageProps {
 export function HomePage({ handymen, announcements, onSelectHandyman, userRole = 'user' }: HomePageProps) {
   // Default view based on role
   const [viewMode, setViewMode] = useState<'pros' | 'jobs'>('pros');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
 
   useEffect(() => {
     if (userRole === 'handyman') {
@@ -21,14 +25,22 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
     }
   }, [userRole]);
 
+  // Load categories from API
+  useEffect(() => {
+    api.getCategories().then((data) => {
+      if (Array.isArray(data)) {
+        setCategories(data);
+      }
+    }).catch(console.error);
+  }, []);
+
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [respondedIds, setRespondedIds] = useState<Set<number>>(new Set());
 
   const handleRespond = async (jobId: number) => {
     setRespondingId(jobId);
     try {
-      const api = (await import('../api')).api;
-      await api.createResponse({ adId: jobId, message: "Откликнусь на вашу заявку", price: 0 });
+      await api.createResponse({ ad_id: jobId, message: "Откликнусь на вашу заявку" });
       setRespondedIds(prev => new Set(prev).add(jobId));
     } catch (e) {
       console.error('Failed to respond to ad', e);
@@ -38,6 +50,25 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
     }
   };
 
+  // Client-side filtering
+  const filteredHandymen = handymen.filter(h => {
+    const matchesCategory = !selectedCategory || h.skill === selectedCategory;
+    const matchesSearch = !searchQuery ||
+      h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      h.skill.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      h.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const filteredAnnouncements = announcements.filter(job => {
+    const matchesCategory = !selectedCategory || job.category === selectedCategory;
+    const matchesSearch = !searchQuery ||
+      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
   return (
     <div className="space-y-8">
       {/* Header Section */}
@@ -46,67 +77,87 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
           {viewMode === 'pros' ? 'Найти специалистов' : 'Доска вакансий'}
         </h2>
 
-        {/* Filters - Keep simple for now */}
+        {/* Search & Filter */}
         <div className="flex gap-2 w-full md:w-auto">
-           <span className="text-sm font-medium text-gray-500 self-center hidden md:inline">Фильтр по:</span>
-           <select className="text-sm border-gray-300 border rounded px-2 py-1 bg-white w-full md:w-auto">
-             <option>Все категории</option>
-             <option>Сантехника</option>
-             <option>Электрика</option>
-             <option>Столярные работы</option>
+           <div className="relative flex-1 md:flex-initial">
+             <Search className="absolute left-2.5 top-2 w-4 h-4 text-gray-400" />
+             <input
+               type="text"
+               value={searchQuery}
+               onChange={(e) => setSearchQuery(e.target.value)}
+               placeholder="Поиск..."
+               className="text-sm border-gray-300 border rounded pl-8 pr-2 py-1 bg-white w-full md:w-48 outline-none focus:border-gray-800 transition-colors"
+             />
+           </div>
+           <select
+             value={selectedCategory}
+             onChange={(e) => setSelectedCategory(e.target.value)}
+             className="text-sm border-gray-300 border rounded px-2 py-1 bg-white w-full md:w-auto"
+           >
+             <option value="">Все категории</option>
+             {categories.map(cat => (
+               <option key={cat.id} value={cat.name}>{cat.name}</option>
+             ))}
            </select>
         </div>
       </div>
 
       {viewMode === 'pros' ? (
         /* Handyman Grid (Visible to Users) */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {handymen.map((handyman) => (
-            <div 
-              key={handyman.id} 
-              className="group bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-gray-800 hover:shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] transition-all duration-200 cursor-pointer"
-              onClick={() => onSelectHandyman(handyman.id)}
-            >
-              <div className="h-48 bg-gray-100 flex items-center justify-center border-b-2 border-gray-100 group-hover:border-gray-800 transition-colors">
-                <span className="text-gray-400 font-bold text-4xl select-none">
-                  {handyman.name.charAt(0)}
-                </span>
-              </div>
-              
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
-                    {handyman.name}
-                  </h3>
-                  <div className="flex items-center bg-gray-100 px-2 py-1 rounded text-xs font-bold">
-                    <Star className="w-3 h-3 fill-gray-900 text-gray-900 mr-1" />
-                    {handyman.rating}
-                  </div>
+        filteredHandymen.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+            <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">Специалисты не найдены.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredHandymen.map((handyman) => (
+              <div 
+                key={handyman.id} 
+                className="group bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-gray-800 hover:shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] transition-all duration-200 cursor-pointer"
+                onClick={() => onSelectHandyman(handyman.id)}
+              >
+                <div className="h-48 bg-gray-100 flex items-center justify-center border-b-2 border-gray-100 group-hover:border-gray-800 transition-colors">
+                  <span className="text-gray-400 font-bold text-4xl select-none">
+                    {handyman.name.charAt(0)}
+                  </span>
                 </div>
                 
-                <div className="mb-4">
-                  <span className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded font-medium">
-                    {handyman.skill}
-                  </span>
-                  <span className="ml-2 text-xs text-gray-500 font-mono">
-                    {handyman.hourlyRate} руб./час
-                  </span>
-                </div>
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {handyman.name}
+                    </h3>
+                    <div className="flex items-center bg-gray-100 px-2 py-1 rounded text-xs font-bold">
+                      <Star className="w-3 h-3 fill-gray-900 text-gray-900 mr-1" />
+                      {handyman.rating}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <span className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded font-medium">
+                      {handyman.skill}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-500 font-mono">
+                      {handyman.hourlyRate} руб./час
+                    </span>
+                  </div>
 
-                <button 
-                  className="w-full flex items-center justify-center gap-2 border-2 border-gray-800 text-gray-800 font-bold py-2 rounded hover:bg-gray-800 hover:text-white transition-all text-sm"
-                >
-                  Открыть профиль
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                  <button 
+                    className="w-full flex items-center justify-center gap-2 border-2 border-gray-800 text-gray-800 font-bold py-2 rounded hover:bg-gray-800 hover:text-white transition-all text-sm"
+                  >
+                    Открыть профиль
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       ) : (
         /* Job Board List (Visible to Handymen) */
         <div className="space-y-4">
-          {announcements.map((job) => (
+          {filteredAnnouncements.map((job) => (
             <div key={job.id} className="bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-gray-800 transition-colors">
               <div className="flex justify-between items-start">
                 <div>
@@ -160,10 +211,12 @@ export function HomePage({ handymen, announcements, onSelectHandyman, userRole =
             </div>
           ))}
           
-          {announcements.length === 0 && (
+          {filteredAnnouncements.length === 0 && (
             <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
               <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">Активных вакансий не найдено.</p>
+              <p className="text-gray-500 font-medium">
+                {searchQuery || selectedCategory ? 'Ничего не найдено по запросу.' : 'Активных вакансий не найдено.'}
+              </p>
             </div>
           )}
         </div>

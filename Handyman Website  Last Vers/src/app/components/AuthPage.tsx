@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Briefcase } from 'lucide-react';
 import { api } from '../api';
 
@@ -16,9 +16,23 @@ export function AuthPage({ onLogin }: AuthPageProps) {
   const [password, setPassword] = useState('');
   
   // Handyman Specific State
-  const [category, setCategory] = useState('Plumbing');
+  const [category, setCategory] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
   const [description, setDescription] = useState('');
+
+  // Categories from DB
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    api.getCategories().then((data) => {
+      if (Array.isArray(data)) {
+        setCategories(data);
+        if (data.length > 0 && !category) {
+          setCategory(data[0].name);
+        }
+      }
+    }).catch(console.error);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,11 +142,13 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full border-2 border-gray-300 p-2.5 rounded-md focus:border-gray-800 outline-none bg-white"
                 >
-                  <option>Сантехника</option>
-                  <option>Электрика</option>
-                  <option>Столярные работы</option>
-                  <option>Малярные работы</option>
-                  <option>Уборка</option>
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))
+                  ) : (
+                    <option disabled>Загрузка...</option>
+                  )}
                 </select>
               </div>
 

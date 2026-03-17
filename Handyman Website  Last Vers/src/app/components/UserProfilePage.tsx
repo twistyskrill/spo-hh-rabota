@@ -23,24 +23,31 @@ export function UserProfilePage({ onBack, onEditProfile, announcements, onAddAnn
   const [myAnnouncements, setMyAnnouncements] = useState<Announcement[]>([]);
   const isHandyman = false; // Здесь можно добавить проверку роли, если потребуется
 
+  const statusMap: Record<string, string> = {
+    pending: 'На модерации',
+    approved: 'Открыто',
+    rejected: 'Отклонено',
+    in_progress: 'В работе',
+    completed: 'Завершено',
+  };
+
   // Load user specific ads from the backend
   React.useEffect(() => {
     import('../api').then(({ api }) => {
       api.getMyAds().then((res) => {
-        if (res && Array.isArray(res)) {
-           const mappedAnnouncements: Announcement[] = res.map((ad: any) => ({
-            id: ad.id,
-            title: ad.title,
-            category: ad.category?.name || 'Без категории',
-            status: ad.status || 'На модерации',
-            date: ad.created_at ? new Date(ad.created_at).toLocaleDateString() : '',
-            budget: `${ad.price} руб.`,
-            handyman: ad.user?.name || null,
-            location: ad.location,
-            description: '', 
-          }));
-          setMyAnnouncements(mappedAnnouncements);
-        }
+        const adsList = res?.ads || (Array.isArray(res) ? res : []);
+        const mappedAnnouncements: Announcement[] = adsList.map((ad: any) => ({
+          id: ad.id,
+          title: ad.title,
+          category: ad.category_name || ad.category?.name || 'Без категории',
+          status: statusMap[ad.status] || ad.status || 'На модерации',
+          date: ad.created_at ? new Date(ad.created_at).toLocaleDateString() : '',
+          budget: `${ad.price} руб.`,
+          handyman: ad.user_name || ad.user?.name || null,
+          location: ad.location,
+          description: '',
+        }));
+        setMyAnnouncements(mappedAnnouncements);
       }).catch(console.error);
     });
   }, []);
@@ -171,60 +178,66 @@ export function UserProfilePage({ onBack, onEditProfile, announcements, onAddAnn
 
             {/* List Content */}
             <div className="p-0">
-              {myAnnouncements.length === 0 ? (
-                <div className="p-12 text-center text-gray-400">
-                  <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p>Нет активных объявлений.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {myAnnouncements.map((announcement) => (
-                    <div key={announcement.id} className="p-6 hover:bg-gray-50 transition-colors group">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                           <h4 className="font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors">
-                             {announcement.title}
-                           </h4>
-                           <span className="text-xs font-bold bg-gray-200 text-gray-700 px-2 py-0.5 rounded mt-1 inline-block">
-                             {announcement.category}
-                           </span>
-                        </div>
-                        <div className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${
-                          announcement.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {announcement.status === 'Open' ? 'Открыто' : announcement.status}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {announcement.date}
-                        </div>
-                        <div className="flex items-center font-mono">
-                          {announcement.budget}
-                        </div>
-                        <div className="col-span-2 flex items-center sm:justify-end">
-                           {announcement.handyman ? (
-                             <span className="flex items-center text-gray-900 font-medium">
-                               <User className="w-4 h-4 mr-2" />
-                               Назначено: {announcement.handyman}
-                             </span>
-                           ) : (
-                             <span className="text-gray-400 italic">Мастер не назначен</span>
-                           )}
-                        </div>
-                      </div>
+              {(() => {
+                const filtered = activeTab === 'active'
+                  ? myAnnouncements.filter(a => ['Открыто', 'На модерации', 'В работе'].includes(a.status))
+                  : myAnnouncements.filter(a => ['Отклонено', 'Завершено'].includes(a.status));
+                
+                if (filtered.length === 0) return (
+                  <div className="p-12 text-center text-gray-400">
+                    <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                    <p>{activeTab === 'active' ? 'Нет активных объявлений.' : 'История пуста.'}</p>
+                  </div>
+                );
 
-                      <div className="mt-4 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="text-xs font-bold text-gray-500 hover:text-gray-900 underline">Просмотреть детали</button>
-                        <span className="text-gray-300">|</span>
-                        <button className="text-xs font-bold text-red-500 hover:text-red-700 underline">Отменить</button>
+                return (
+                  <div className="divide-y divide-gray-100">
+                    {filtered.map((announcement) => (
+                      <div key={announcement.id} className="p-6 hover:bg-gray-50 transition-colors group">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors">
+                              {announcement.title}
+                            </h4>
+                            <span className="text-xs font-bold bg-gray-200 text-gray-700 px-2 py-0.5 rounded mt-1 inline-block">
+                              {announcement.category}
+                            </span>
+                          </div>
+                          <div className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+                            announcement.status === 'Открыто' ? 'bg-green-100 text-green-700'
+                            : announcement.status === 'На модерации' ? 'bg-yellow-100 text-yellow-700'
+                            : announcement.status === 'Отклонено' ? 'bg-red-100 text-red-700'
+                            : announcement.status === 'В работе' ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {announcement.status}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {announcement.date}
+                          </div>
+                          <div className="flex items-center font-mono">
+                            {announcement.budget}
+                          </div>
+                          <div className="col-span-2 flex items-center sm:justify-end">
+                            {announcement.handyman ? (
+                              <span className="flex items-center text-gray-900 font-medium">
+                                <User className="w-4 h-4 mr-2" />
+                                Назначено: {announcement.handyman}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 italic">Мастер не назначен</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
