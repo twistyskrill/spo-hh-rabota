@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Handyman } from '../data';
 import { api } from '../api';
+import { AIAssistButton } from './AIAssistButton';
 
 interface HandymanProfileEditorProps {
   handyman: Handyman;
@@ -63,7 +64,14 @@ export function HandymanProfileEditor({ handyman, onSave, onBack }: HandymanProf
             <input type="number" value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" required />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Описание</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-bold text-gray-700">Описание</label>
+              <AIAssistButton 
+                currentText={description}
+                onGenerated={setDescription}
+                context={`Имя мастера: ${name}. Специализация: ${skill}.`}
+              />
+            </div>
             <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none resize-none" rows={3} required />
           </div>
           <button type="submit" className="w-full bg-gray-800 text-white font-bold py-3 px-4 rounded-md hover:bg-gray-700 transition-all">Сохранить</button>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Upload, MapPin, Briefcase } from 'lucide-react';
 import { api } from '../api';
+import { AIAssistButton } from './AIAssistButton';
 
 interface CreateAnnouncementModalProps {
   isOpen: boolean;
@@ -206,7 +207,14 @@ export function CreateAnnouncementModal({ isOpen, onClose, onSubmit }: CreateAnn
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Описание</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-bold text-gray-700">Описание</label>
+                <AIAssistButton 
+                  currentText={formData.description}
+                  onGenerated={(text) => setFormData({...formData, description: text})}
+                  context={`Название работы: ${formData.title}. Локация: ${formData.location}. Бюджет: ${formData.budget}`}
+                />
+              </div>
               <textarea 
                 rows={4}
                 className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none resize-none"

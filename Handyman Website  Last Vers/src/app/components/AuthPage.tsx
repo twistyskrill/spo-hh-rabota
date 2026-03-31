@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Briefcase } from 'lucide-react';
 import { api } from '../api';
+import { AIAssistButton } from './AIAssistButton';
 
 interface AuthPageProps {
   onLogin: (role: 'user' | 'handyman', data?: any) => void;
@@ -165,7 +166,14 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Краткая биография</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-bold text-gray-700">Краткая биография</label>
+                  <AIAssistButton 
+                    currentText={description}
+                    onGenerated={setDescription}
+                    context={`Имя: ${name}. Специализация: ${category}. Ставка: ${hourlyRate}`}
+                  />
+                </div>
                 <textarea 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
