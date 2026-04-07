@@ -100,6 +100,8 @@ export function ChatPage({ handymanId, onBack }: ChatPageProps) {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type your message..." 
           className="flex-1 border-2 border-gray-200 rounded-md px-4 py-2 focus:border-gray-800 outline-none transition-colors"
+          minLength={1}
+          maxLength={500}
         />
         <button 
           type="submit" 

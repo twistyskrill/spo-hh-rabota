@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Star, MessageSquare, ArrowLeft, Clock, Shield, Award, Send, Calendar } from 'lucide-react';
 import { Handyman } from '../data';
 import { ScheduleModal } from './ScheduleModal';
+import { api } from '../api';
 
 interface ProfilePageProps {
   handyman: Handyman;
@@ -10,35 +11,51 @@ interface ProfilePageProps {
   onAddReview: (id: string, review: any) => void;
   isOwnProfile?: boolean;
   onEditProfile?: () => void;
+  currentUserProfile?: any;
 }
 
-export function ProfilePage({ handyman, onChat, onBack, onAddReview, isOwnProfile = false, onEditProfile }: ProfilePageProps) {
+export function ProfilePage({ handyman, onChat, onBack, onAddReview, isOwnProfile = false, onEditProfile, currentUserProfile }: ProfilePageProps) {
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewText.trim()) return;
 
     setIsSubmitting(true);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      const newReview = {
-        id: Date.now().toString(),
-        author: 'Current User', // In a real app, this would be the logged-in user
+    // Frontend guard: prevent multiple reviews from same user
+    const currentUserName = currentUserProfile?.name;
+    if (currentUserName && handyman.reviews.some((r: any) => r.author === currentUserName)) {
+      alert('Вы уже оставили отзыв для этого специалиста.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await api.createReview({
+        worker_id: Number(handyman.id),
         rating: rating,
-        text: reviewText,
-        date: new Date().toISOString().split('T')[0]
+        text: reviewText
+      });
+      
+      const newReview = {
+        id: String(res.id),
+        author: res.author || 'Я',
+        rating: res.rating,
+        text: res.text,
+        date: new Date(res.date).toLocaleDateString()
       };
       
       onAddReview(handyman.id, newReview);
       setReviewText('');
       setRating(5);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Error creating review');
+    } finally {
       setIsSubmitting(false);
-    }, 600);
+    }
   };
 
   return (
@@ -186,6 +203,8 @@ export function ProfilePage({ handyman, onChat, onBack, onAddReview, isOwnProfil
                         className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none resize-none bg-white"
                         rows={3}
                         placeholder="Поделитесь своим опытом..."
+                        minLength={10}
+                        maxLength={1000}
                         required
                       />
                     </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { VALIDATION } from '../validation';
 
 interface UserProfile {
   name: string;
@@ -42,19 +43,19 @@ export function UserProfileEditor({ profile, onSave, onBack }: UserProfileEditor
         <form onSubmit={handleSave} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Имя</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" required />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" pattern={VALIDATION.name.source} required />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
-            <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" required />
+            <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" pattern={VALIDATION.email.source} required />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Телефон</label>
-            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" required />
+            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" pattern={VALIDATION.phone.source} required />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Локация</label>
-            <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" required />
+            <input type="text" value={location} onChange={e => setLocation(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" pattern={VALIDATION.location.source} required />
           </div>
           <button type="submit" className="w-full bg-gray-800 text-white font-bold py-3 px-4 rounded-md hover:bg-gray-700 transition-all">Сохранить</button>
         </form>

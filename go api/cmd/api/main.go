@@ -7,10 +7,11 @@ import (
 	handlerAds "go-api/internal/handlers/ads"
 	handlerAuth "go-api/internal/handlers/auth"
 	handlerInfo "go-api/internal/handlers/info"
+	handlerReviews "go-api/internal/handlers/reviews"
 	handlerSys "go-api/internal/handlers/sys"
 	handlerWork "go-api/internal/handlers/worker"
-	"go-api/internal/storage"
 	appmw "go-api/internal/middleware"
+	"go-api/internal/storage"
 	"log/slog"
 	"net/http"
 	"os"
@@ -46,6 +47,7 @@ func main() {
 	handlerWork.SetupRoutes(store.DB(), logger, r)
 	handlerInfo.SetupRoutes(store.DB(), logger, r)
 	handlerAds.SetupRoutes(store.DB(), logger, r)
+	handlerReviews.SetupRoutes(store.DB(), logger, r)
 	handlerAdmin.SetupRoutes(store.DB(), logger, r) // Админ-панель
 
 	logger.Info("server started", slog.String("port", ":8080"))

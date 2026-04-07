@@ -32,6 +32,7 @@ export default function App() {
   const [showCreateUserProfile, setShowCreateUserProfile] = useState(false);
   const [isEditingUserProfile, setIsEditingUserProfile] = useState(false);
   const [currentHandymanId, setCurrentHandymanId] = useState<string | null>(null);
+  const [ownHandymanReviews, setOwnHandymanReviews] = useState<any[]>([]);
   const [showCreateHandyman, setShowCreateHandyman] = useState(false);
   const [isEditingOwnHandymanProfile, setIsEditingOwnHandymanProfile] = useState(false);
   
@@ -64,12 +65,49 @@ export default function App() {
         setCurrentPage('home');
       } catch (error) {
         console.error('Failed to restore session from token', error);
-        localStorage.removeItem('token');
+        const message = error instanceof Error ? error.message : String(error);
+
+        // If backend is down / temporarily unreachable, don't log the user out.
+        // Otherwise a brief outage causes the app to delete the token and all
+        // subsequent requests become "Authorization header required".
+        const isNetworkError =
+          error instanceof TypeError ||
+          /failed to fetch|networkerror|load failed|connection refused/i.test(message);
+
+        if (isNetworkError) return;
+
+        // For real auth failures (expired/invalid token), clear token.
+        const isAuthError = /authorization|unauthorized|invalid token|token/i.test(message);
+        if (isAuthError) {
+          localStorage.removeItem('token');
+        }
       }
     };
 
     restoreSession();
   }, []);
+
+  // When a handyman is logged in, fetch their reviews so their own profile shows them
+  useEffect(() => {
+    const fetchOwnReviews = async () => {
+      if (userRole !== 'handyman' || !currentHandymanId) return;
+      try {
+        const res = await api.getHandymanReviews(Number(currentHandymanId), 50, 0).catch(() => ({ reviews: [] }));
+        const fetched = (res.reviews || []).map((r: any) => ({
+          id: String(r.id),
+          author: r.author || 'Аноним',
+          rating: r.rating,
+          text: r.text,
+          date: r.date ? new Date(r.date).toLocaleDateString() : '',
+        }));
+        setOwnHandymanReviews(fetched);
+      } catch (e) {
+        console.error('Failed to load own handyman reviews', e);
+      }
+    };
+
+    fetchOwnReviews();
+  }, [userRole, currentHandymanId]);
 
   // Global State
   const [handymen, setHandymen] = useState<Handyman[]>([]);
@@ -101,17 +139,37 @@ export default function App() {
         setAnnouncements(mappedAnnouncements);
 
         // Мастера: handymenRes: { workers: [...], pagination: {...} }
-        const mappedHandymen: Handyman[] = (handymenRes.workers || []).map((w: any) => ({
+        const basicHandymen: Handyman[] = (handymenRes.workers || []).map((w: any) => ({
           id: String(w.id),
           name: w.name,
           skill: (w.categories && w.categories[0]?.name) || 'Мастер',
-          rating: 0, // в API пока нет рейтинга
+          rating: 0,
           hourlyRate: w.hourly_rate || 0,
           description: w.description || '',
           reviews: [],
           email: w.email,
         }));
-        setHandymen(mappedHandymen);
+
+        // Fetch reviews for each handyman so ratings are available immediately
+        const withReviews = await Promise.all(basicHandymen.map(async (h) => {
+          try {
+            const res = await api.getHandymanReviews(Number(h.id), 10, 0).catch(() => ({ reviews: [] }));
+            const fetched = (res.reviews || []).map((r: any) => ({
+              id: String(r.id),
+              author: r.author || 'Аноним',
+              rating: r.rating,
+              text: r.text,
+              date: r.date ? new Date(r.date).toLocaleDateString() : '',
+            }));
+            const totalRating = fetched.reduce((acc: number, r: any) => acc + r.rating, 0);
+            const avg = fetched.length ? Number((totalRating / fetched.length).toFixed(1)) : 0;
+            return { ...h, reviews: fetched, rating: avg } as Handyman;
+          } catch (e) {
+            return h;
+          }
+        }));
+
+        setHandymen(withReviews);
       } catch (error) {
         console.error('Failed to load data from API', error);
       }
@@ -215,24 +273,39 @@ export default function App() {
     setSelectedHandymanId(id);
     setCurrentPage('profile');
     try {
-      const data = await api.getHandymanById(Number(id));
+      const [data, reviewsData] = await Promise.all([
+        api.getHandymanById(Number(id)),
+        api.getHandymanReviews(Number(id)).catch(() => ({ reviews: [] }))
+      ]);
       if (data) {
+        // Map API reviews to expected format
+        const fetchedReviews = (reviewsData.reviews || []).map((r: any) => ({
+          id: String(r.id),
+          author: r.author,
+          rating: r.rating,
+          text: r.text,
+          date: new Date(r.date).toLocaleDateString()
+        }));
+
+        const totalRating = fetchedReviews.reduce((acc: number, r: any) => acc + r.rating, 0);
+        const newRating = fetchedReviews.length ? Number((totalRating / fetchedReviews.length).toFixed(1)) : 0;
+
         // Find existing to preserve reviews or local state if desired, or just overwrite with API data
         const apiHandyman: Handyman = {
           id: String(data.user_id || data.id || id),
           name: data.name || 'Мастер',
           skill: data.categories?.[0]?.name || 'Специалист',
-          rating: 0,
+          rating: newRating,
           hourlyRate: data.hourly_rate || 0,
           description: data.description || '',
-          reviews: [],
+          reviews: fetchedReviews,
           email: data.email || ''
         };
         // Update handymen list with the detailed data
         setHandymen(prev => {
           const exists = prev.find(h => h.id === apiHandyman.id);
           if (exists) {
-            return prev.map(h => h.id === apiHandyman.id ? { ...h, ...apiHandyman, reviews: h.reviews } : h);
+            return prev.map(h => h.id === apiHandyman.id ? { ...h, ...apiHandyman, reviews: apiHandyman.reviews } : h);
           }
           return [...prev, apiHandyman];
         });
@@ -275,10 +348,10 @@ export default function App() {
         id: currentHandymanId || Date.now().toString(),
         name: currentUserProfile.name,
         skill: (currentUserProfile as any).worker?.specialization?.[0]?.name || 'Мастер',
-        rating: 0,
+        rating: ownHandymanReviews.length ? Number((ownHandymanReviews.reduce((s, r) => s + (r.rating || 0), 0) / ownHandymanReviews.length).toFixed(1)) : 0,
         hourlyRate: (currentUserProfile as any).worker?.hourly_rate || 0,
         description: (currentUserProfile as any).worker?.description || '',
-        reviews: [],
+        reviews: ownHandymanReviews.length ? ownHandymanReviews : [],
         email: currentUserProfile.email,
         location: (currentUserProfile as any).worker?.location || '',
       } as Handyman
@@ -295,6 +368,14 @@ export default function App() {
       }
       return h;
     }));
+
+    // If the review is for the currently logged-in handyman, update their own reviews and rating
+    if (handymanId === currentHandymanId) {
+      setOwnHandymanReviews(prev => {
+        const updated = [review, ...prev];
+        return updated;
+      });
+    }
   };
 
   const handleAddAnnouncement = (announcement: Announcement) => {
@@ -400,6 +481,7 @@ export default function App() {
           onChat={handleChat} 
           onBack={handleBackToHome}
           onAddReview={handleAddReview}
+          currentUserProfile={currentUserProfile}
         />
       )}
 
@@ -484,6 +566,7 @@ export default function App() {
               onSave={async (updatedHandyman) => {
                 try {
                   await api.updateProfile({
+                    name: updatedHandyman.name,
                     description: updatedHandyman.description,
                     hourly_rate: updatedHandyman.hourlyRate,
                     category_names: [updatedHandyman.skill],
@@ -517,6 +600,7 @@ export default function App() {
               handyman={currentOwnHandymanProfile}
               onBack={handleBackToHome}
               onAddReview={() => {}}
+              currentUserProfile={currentUserProfile}
               isOwnProfile
               onEditProfile={() => setIsEditingOwnHandymanProfile(true)}
             />

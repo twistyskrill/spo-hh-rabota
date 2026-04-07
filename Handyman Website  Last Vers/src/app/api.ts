@@ -46,7 +46,7 @@ export const api = {
     const res = await fetch(`${API_URL}/profile`, {
       headers: getAuthHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to get profile');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to get profile'));
     return res.json();
   },
   updateProfile: async (data: any) => {
@@ -151,6 +151,20 @@ export const api = {
   getHandymanById: async (id: number) => {
     const res = await fetch(`${API_URL}/handyman/${id}`);
     if (!res.ok) throw new Error('Failed to fetch handyman');
+    return res.json();
+  },
+  getHandymanReviews: async (id: number, limit = 10, offset = 0) => {
+    const res = await fetch(`${API_URL}/handyman/${id}/reviews?limit=${limit}&offset=${offset}`);
+    if (!res.ok) throw new Error('Failed to fetch handyman reviews');
+    return res.json();
+  },
+  createReview: async (data: { worker_id: number; rating: number; text: string }) => {
+    const res = await fetch(`${API_URL}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to create review'));
     return res.json();
   },
   getHandymanCategories: async () => {

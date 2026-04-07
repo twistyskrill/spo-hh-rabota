@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, User, Sun, Moon, LogOut } from 'lucide-react';
+import { VALIDATION } from '../validation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -120,7 +121,7 @@ export function Layout({ children, onNavigate, currentPage, onLogout, isAdmin = 
           <div>
             <h4 className="font-bold mb-4 uppercase text-sm tracking-wider">Подписка</h4>
             <div className="flex gap-2">
-              <input type="email" placeholder="Электронная почта" className="border-2 border-gray-300 p-2 w-full text-sm rounded-sm" />
+              <input type="email" placeholder="Электронная почта" className="border-2 border-gray-300 p-2 w-full text-sm rounded-sm" pattern={VALIDATION.email.source} />
               <button className="bg-gray-800 text-white px-4 py-2 font-bold text-sm uppercase rounded-sm">Отправить</button>
             </div>
           </div>

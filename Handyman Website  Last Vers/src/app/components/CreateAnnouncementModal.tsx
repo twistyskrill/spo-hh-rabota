@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, Upload, MapPin, Briefcase } from 'lucide-react';
 import { api } from '../api';
 import { AIAssistButton } from './AIAssistButton';
+import { VALIDATION } from '../validation';
 
 interface CreateAnnouncementModalProps {
   isOpen: boolean;
@@ -124,6 +125,7 @@ export function CreateAnnouncementModal({ isOpen, onClose, onSubmit }: CreateAnn
                 placeholder="например, Починить протекающий кран"
                 value={formData.title}
                 onChange={e => setFormData({...formData, title: e.target.value})}
+                pattern={VALIDATION.title.source}
               />
             </div>
 
@@ -154,6 +156,7 @@ export function CreateAnnouncementModal({ isOpen, onClose, onSubmit }: CreateAnn
                   className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none"
                   placeholder="100"
                   min={1}
+                  max={100000000}
                   required
                   value={formData.budget}
                   onChange={e => setFormData({...formData, budget: e.target.value})}
@@ -186,6 +189,7 @@ export function CreateAnnouncementModal({ isOpen, onClose, onSubmit }: CreateAnn
                   placeholder="будни, с 9 до 18"
                   value={formData.schedule}
                   onChange={e => setFormData({ ...formData, schedule: e.target.value })}
+                  pattern={VALIDATION.schedule.source}
                 />
               </div>
             </div>
@@ -201,6 +205,8 @@ export function CreateAnnouncementModal({ isOpen, onClose, onSubmit }: CreateAnn
                   placeholder="ул. Главная, 123, Город"
                   value={formData.location}
                   onChange={e => setFormData({...formData, location: e.target.value})}
+                  pattern={VALIDATION.location.source}
+                  required
                 />
               </div>
             </div>
@@ -213,6 +219,7 @@ export function CreateAnnouncementModal({ isOpen, onClose, onSubmit }: CreateAnn
                   currentText={formData.description}
                   onGenerated={(text) => setFormData({...formData, description: text})}
                   context={`Название работы: ${formData.title}. Локация: ${formData.location}. Бюджет: ${formData.budget}`}
+                  userType="user"
                 />
               </div>
               <textarea 
@@ -221,6 +228,8 @@ export function CreateAnnouncementModal({ isOpen, onClose, onSubmit }: CreateAnn
                 placeholder="Опишите проблему подробно..."
                 value={formData.description}
                 onChange={e => setFormData({...formData, description: e.target.value})}
+                minLength={10}
+                maxLength={2000}
               />
             </div>
 

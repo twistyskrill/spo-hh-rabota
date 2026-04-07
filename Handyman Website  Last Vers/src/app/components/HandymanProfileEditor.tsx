@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Handyman } from '../data';
 import { api } from '../api';
 import { AIAssistButton } from './AIAssistButton';
+import { VALIDATION } from '../validation';
 
 interface HandymanProfileEditorProps {
   handyman: Handyman;
@@ -45,7 +46,7 @@ export function HandymanProfileEditor({ handyman, onSave, onBack }: HandymanProf
         <form onSubmit={handleSave} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Имя</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" required />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" pattern={VALIDATION.name.source} required />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Специализация</label>
@@ -61,7 +62,7 @@ export function HandymanProfileEditor({ handyman, onSave, onBack }: HandymanProf
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Почасовая ставка (руб.)</label>
-            <input type="number" value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" required />
+            <input type="number" value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none" min={1} max={1000000} required />
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -72,7 +73,7 @@ export function HandymanProfileEditor({ handyman, onSave, onBack }: HandymanProf
                 context={`Имя мастера: ${name}. Специализация: ${skill}.`}
               />
             </div>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none resize-none" rows={3} required />
+            <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border-2 border-gray-300 p-3 rounded-md focus:border-gray-800 outline-none resize-none" rows={3} minLength={10} maxLength={2000} required />
           </div>
           <button type="submit" className="w-full bg-gray-800 text-white font-bold py-3 px-4 rounded-md hover:bg-gray-700 transition-all">Сохранить</button>
         </form>

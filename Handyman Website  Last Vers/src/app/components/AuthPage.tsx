@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Briefcase } from 'lucide-react';
 import { api } from '../api';
 import { AIAssistButton } from './AIAssistButton';
+import { VALIDATION } from '../validation';
 
 interface AuthPageProps {
   onLogin: (role: 'user' | 'handyman', data?: any) => void;
@@ -128,6 +129,7 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                 onChange={(e) => setName(e.target.value)}
                 className="w-full border-2 border-gray-300 p-2.5 rounded-md focus:border-gray-800 outline-none transition-colors"
                 placeholder="Иван Иванов"
+                pattern={VALIDATION.name.source}
                 required
               />
             </div>
@@ -161,6 +163,8 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                   onChange={(e) => setHourlyRate(e.target.value)}
                   className="w-full border-2 border-gray-300 p-2.5 rounded-md focus:border-gray-800 outline-none transition-colors"
                   placeholder="50"
+                  min={1}
+                  max={1000000}
                   required
                 />
               </div>
@@ -180,6 +184,8 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                   className="w-full border-2 border-gray-300 p-2.5 rounded-md focus:border-gray-800 outline-none transition-colors resize-none"
                   placeholder="У меня 10 лет опыта..."
                   rows={2}
+                  minLength={10}
+                  maxLength={2000}
                   required
                 />
               </div>
@@ -194,6 +200,7 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border-2 border-gray-300 p-2.5 rounded-md focus:border-gray-800 outline-none transition-colors"
               placeholder="you@example.com"
+              {...(!isLogin ? { pattern: VALIDATION.email.source } : {})}
               required
             />
           </div>
@@ -206,6 +213,7 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border-2 border-gray-300 p-2.5 rounded-md focus:border-gray-800 outline-none transition-colors"
               placeholder="••••••••"
+              {...(!isLogin ? { pattern: VALIDATION.password.source } : {})}
               required
             />
           </div>

@@ -57,7 +57,7 @@ type WorkerProfile struct {
 	UserID      uint    `gorm:"not null;uniqueIndex" json:"-"`
 	ExpYears    *int    `json:"exp_years"`   // NULLABLE
 	HourlyRate  *int    `json:"hourly_rate"` // NULLABLE
-	Description *string `gorm:"size:255" json:"description"`
+	Description *string `gorm:"type:text" json:"description"`
 	IsBusy      bool    `gorm:"default:false;not null" json:"is_busy"`
 	Location    string  `gorm:"size:255" json:"location"` // место жительства / работы
 	Schedule    string  `gorm:"size:255" json:"schedule"` // расписание (часы / дни)
@@ -82,7 +82,7 @@ type Ad struct {
 	Schedule    string    `gorm:"size:255" json:"schedule"` // когда актуально объявление
 	CreatedAt   time.Time `gorm:"not null;index" json:"created_at"`
 	Status      string    `gorm:"size:20;not null;default:'pending';index" json:"status"` // pending, approved, rejected, in_progress, completed
-	ExecutorID  *uint     `gorm:"index" json:"executor_id,omitempty"` // ID мастера, который взял в работу
+	ExecutorID  *uint     `gorm:"index" json:"executor_id,omitempty"`                     // ID мастера, который взял в работу
 
 	// Связи
 	Category  Category  `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
