@@ -74,6 +74,7 @@ func NewDB(cfg config.DB, basicLogger *slog.Logger) (*Postgres, error) {
 		&models.Ad{},
 		&models.Review{},
 		&models.Response{},
+		&models.WorkerAvailabilitySlot{},
 
 		&models.WorkerCategory{},
 		&models.BlackList{},

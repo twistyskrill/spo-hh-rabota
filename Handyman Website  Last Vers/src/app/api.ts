@@ -20,6 +20,12 @@ export const getAuthHeaders = (): Record<string, string> => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+export interface AvailabilitySlot {
+  id: number;
+  start_at: string;
+  is_booked: boolean;
+}
+
 export const api = {
   // Auth
   register: async (data: any) => {
@@ -156,6 +162,46 @@ export const api = {
   getHandymanReviews: async (id: number, limit = 10, offset = 0) => {
     const res = await fetch(`${API_URL}/handyman/${id}/reviews?limit=${limit}&offset=${offset}`);
     if (!res.ok) throw new Error('Failed to fetch handyman reviews');
+    return res.json();
+  },
+  getHandymanAvailability: async (id: number, from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    const url = `${API_URL}/handyman/${id}/availability${query ? `?${query}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch handyman availability'));
+    return res.json() as Promise<{ slots: AvailabilitySlot[] }>;
+  },
+  getMyAvailability: async (from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    const url = `${API_URL}/handyman/availability/${query ? `?${query}` : ''}`;
+    const res = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch my availability'));
+    return res.json() as Promise<{ slots: AvailabilitySlot[] }>;
+  },
+  updateMyAvailability: async (slots: string[]) => {
+    const res = await fetch(`${API_URL}/handyman/availability/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ slots }),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to update availability'));
+    return res.json();
+  },
+  bookHandymanSlot: async (workerId: number, startAt: string) => {
+    const res = await fetch(`${API_URL}/handyman/${workerId}/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ start_at: startAt }),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to book slot'));
     return res.json();
   },
   createReview: async (data: { worker_id: number; rating: number; text: string }) => {

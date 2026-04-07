@@ -254,6 +254,8 @@ export function ProfilePage({ handyman, onChat, onBack, onAddReview, isOwnProfil
         isOpen={isScheduleOpen}
         onClose={() => setIsScheduleOpen(false)}
         handymanName={handyman.name}
+        handymanId={Number(handyman.id)}
+        isOwnProfile={isOwnProfile}
       />
     </div>
   );

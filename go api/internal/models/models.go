@@ -130,6 +130,15 @@ type Response struct {
 	Worker WorkerProfile `gorm:"foreignKey:WorkerID;references:UserID" json:"worker,omitempty"`
 }
 
+type WorkerAvailabilitySlot struct {
+	gorm.Model
+	WorkerID       uint       `gorm:"not null;index:idx_worker_start,unique" json:"worker_id"`
+	StartAt        time.Time  `gorm:"not null;index:idx_worker_start,unique" json:"start_at"`
+	IsBooked       bool       `gorm:"not null;default:false;index" json:"is_booked"`
+	BookedByUserID *uint      `gorm:"index" json:"booked_by_user_id,omitempty"`
+	BookedAt       *time.Time `json:"booked_at,omitempty"`
+}
+
 type BlackList struct {
 	Email string `gorm:"primaryKey;size:255;not null" json:"email"`
 }
