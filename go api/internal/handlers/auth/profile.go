@@ -83,6 +83,7 @@ func editProfile(db *gorm.DB, logger *slog.Logger) http.HandlerFunc {
 		type ProfileInput struct {
 			// User поля
 			Name  *string `json:"name,omitempty"`
+			Email *string `json:"email,omitempty"`
 			Phone *string `json:"phone,omitempty"`
 
 			// WorkerProfile поля
@@ -113,6 +114,9 @@ func editProfile(db *gorm.DB, logger *slog.Logger) http.HandlerFunc {
 		userUpdates := map[string]interface{}{}
 		if input.Name != nil {
 			userUpdates["name"] = *input.Name
+		}
+		if input.Email != nil {
+			userUpdates["email"] = *input.Email
 		}
 		if input.Phone != nil {
 			userUpdates["phone"] = *input.Phone

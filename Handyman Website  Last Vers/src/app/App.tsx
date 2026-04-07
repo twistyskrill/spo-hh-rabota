@@ -501,6 +501,7 @@ export default function App() {
                 try {
                   await api.updateProfile({
                     name: updatedProfile.name,
+                    email: updatedProfile.email,
                     phone: updatedProfile.phone,
                     location: updatedProfile.location
                   });
@@ -535,6 +536,7 @@ export default function App() {
                 try {
                   await api.updateProfile({
                     name: newProfile.name,
+                    email: newProfile.email,
                     phone: newProfile.phone,
                     location: newProfile.location
                   });
